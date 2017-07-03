@@ -78,6 +78,8 @@ type Repository struct {
 	URL       string `json:"url,omitempty"`
 }
 
+var travisPubKey *rsa.PublicKey
+
 // GetPayload will parse the payload inside r
 func GetPayload(r io.Reader) (*Payload, error) {
 	if r == nil {
@@ -152,6 +154,11 @@ type configKey struct {
 }
 
 func travisPublicKey() (*rsa.PublicKey, error) {
+	/* check if TravisCI's public key is already stored locally */
+	if travisPubKey != nil {
+		return travisPubKey, nil
+	}
+
 	response, err := http.Get("https://api.travis-ci.org/config")
 
 	if err != nil {
@@ -171,7 +178,10 @@ func travisPublicKey() (*rsa.PublicKey, error) {
 		return nil, err
 	}
 
-	return key, nil
+	/* store public key locally */
+	travisPubKey = key
+
+	return travisPubKey, nil
 }
 
 func parsePublicKey(key string) (*rsa.PublicKey, error) {
